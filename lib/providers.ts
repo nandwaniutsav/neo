@@ -15,7 +15,7 @@ export interface ProviderInfo {
 export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
   gemini: {
     id: "gemini", label: "Google Gemini", keyUrl: "https://aistudio.google.com/apikey", keyHost: "aistudio.google.com",
-    placeholder: "AIza...", cost: "Free tier available. No card needed, with daily limits that cover a briefing or two a day.",
+    placeholder: "AIza... or AQ....", cost: "Free tier available. No card needed, with daily limits that cover a briefing or two a day.",
     free: true, model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
   },
   openai: {
@@ -39,7 +39,7 @@ export function isProvider(v: unknown): v is ProviderId {
 /** Guess the provider from the shape of a key, so people can just paste it. */
 export function detectProvider(key: string): ProviderId | null {
   if (/^sk-ant-/.test(key)) return "anthropic";
-  if (/^AIza/.test(key)) return "gemini";
+  if (/^(AIza|AQ\.)/.test(key)) return "gemini";
   if (/^sk-/.test(key)) return "openai";
   return null;
 }
@@ -52,10 +52,10 @@ export async function verifyKey(provider: ProviderId, key: string): Promise<Verd
   const shape: Record<ProviderId, RegExp> = {
     anthropic: /^sk-ant-[A-Za-z0-9_-]{20,}$/,
     openai: /^sk-[A-Za-z0-9_-]{20,}$/,
-    gemini: /^AIza[A-Za-z0-9_-]{30,}$/,
+    gemini: /^(AIza[A-Za-z0-9_-]{30,}|AQ\.[A-Za-z0-9._-]{20,})$/,
   };
   if (!shape[provider].test(key)) {
-    return { ok: false, error: `That doesn't look like a ${info.label} key. It should start with ${info.placeholder.replace("...", "")}.` };
+    return { ok: false, error: `That doesn't look like a ${info.label} key. It should start with ${info.placeholder.replace(/\.\.\./g, "")}.` };
   }
   const req: Record<ProviderId, [string, Record<string, string>]> = {
     anthropic: ["https://api.anthropic.com/v1/models?limit=1", { "x-api-key": key, "anthropic-version": "2023-06-01" }],
